@@ -45,7 +45,7 @@ func processCSV(reader *csv.Reader) {
 		t, err := time.Parse(time.RFC3339, record[len(record)-2])
 		fmt.Println("PAY ATTENTION: ", t)
 		timeDiff := timediff.TimeDiff(t)
-		fmt.Println(record[:len(record)-2], timeDiff)
+		fmt.Println(record[:len(record)-2], timeDiff, record[len(record)-1])
 	}
 }
 
@@ -126,7 +126,7 @@ func writeToCSVFile(filename string, record []string) {
 	}
 }
 
-func deleteRecordFromCSVFile(filename string, id string) {
+func deleteRecordFromCSVFile(filename string, id string, upd bool) {
 	//create a tmp file, read from org file to tmp file, then replace original with new file
 	org_file, err := os.Open(filename)
 	if err != nil {
@@ -152,9 +152,22 @@ func deleteRecordFromCSVFile(filename string, id string) {
 		} else if err != nil {
 			fmt.Println("Failed to copy to temporary file: ", err)
 			break
-		} else if record[0] != id {
-			if err := writer.Write(record); err != nil {
-				fmt.Println("Failed to write to temporary file: ", err)
+		} else {
+			if upd {
+				// need to make it true
+				if record[0] == id {
+					record[len(record)-1] = "true"
+				}
+				if err := writer.Write(record); err != nil {
+					fmt.Println("Failed to write to temporary file: ", err)
+				}
+
+			} else {
+				if record[0] != id {
+					if err := writer.Write(record); err != nil {
+						fmt.Println("Failed to write to temporary file: ", err)
+					}
+				}
 			}
 		}
 	}
@@ -179,27 +192,10 @@ func main() {
 	case "add":
 		writeToCSVFile("data.csv", user_input[1:])
 	case "delete":
-		deleteRecordFromCSVFile("data.csv", user_input[1])
+		deleteRecordFromCSVFile("data.csv", user_input[1], false)
 	case "complete":
-		completeTaskInCSVFile("data.csv", user_input[1])
+		deleteRecordFromCSVFile("data.csv", user_input[1], true)
 	default:
 		fmt.Println("Invalid args")
 	}
-	fmt.Println(time.Now())
-	fmt.Println((time.Now()).String())
-	str1 := timediff.TimeDiff(time.Now().Add(-10 * time.Second))
-	fmt.Println(str1) // a few seconds ago
-
-	str2 := timediff.TimeDiff(time.Now().Add(-3 * time.Minute))
-	fmt.Println(str2) // 3 minutes ago
-
-	str3 := timediff.TimeDiff(time.Now().Add(-23 * time.Hour))
-	fmt.Println(str3) // a day ago
-
-	str4 := timediff.TimeDiff(time.Now().Add(23 * time.Hour))
-	fmt.Println(str4) // in a day
-
-	str5 := timediff.TimeDiff(time.Now().Add(10 * time.Hour))
-	fmt.Println(str5) // in 10 hours
-
 }

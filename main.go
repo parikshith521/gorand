@@ -7,6 +7,10 @@ import (
 	"io"
 	"os"
 	"strconv"
+	"strings"
+	"time"
+
+	"github.com/mergestat/timediff"
 )
 
 func readCSVFile(filename string) ([]byte, error) {
@@ -36,7 +40,12 @@ func processCSV(reader *csv.Reader) {
 			fmt.Println("Error reading CSV data: ", err)
 			break
 		}
-		fmt.Println(record)
+		str1 := record[len(record)-2]
+		fmt.Println("VERIFY: ", str1)
+		t, err := time.Parse(time.RFC3339, record[len(record)-2])
+		fmt.Println("PAY ATTENTION: ", t)
+		timeDiff := timediff.TimeDiff(t)
+		fmt.Println(record[:len(record)-2], timeDiff)
 	}
 }
 
@@ -108,7 +117,8 @@ func writeToCSVFile(filename string, record []string) {
 		fmt.Println("Error seeking CSV end")
 		return
 	}
-	full_record := append([]string{strconv.Itoa(cnt + 1)}, record...)
+	//record should be combined into a complete string...
+	full_record := append([]string{strconv.Itoa(cnt + 1)}, strings.Join(record, " "), time.Now().Format(time.RFC3339), "false")
 	writeCSVRecord(writer, full_record)
 	writer.Flush()
 	if err := writer.Error(); err != nil {
@@ -159,7 +169,6 @@ func deleteRecordFromCSVFile(filename string, id string) {
 	if err := os.Rename(tmp_file.Name(), filename); err != nil {
 		fmt.Println("Failed to rename temporary file: ", err)
 	}
-
 }
 
 func main() {
@@ -171,8 +180,26 @@ func main() {
 		writeToCSVFile("data.csv", user_input[1:])
 	case "delete":
 		deleteRecordFromCSVFile("data.csv", user_input[1])
+	case "complete":
+		completeTaskInCSVFile("data.csv", user_input[1])
 	default:
 		fmt.Println("Invalid args")
 	}
+	fmt.Println(time.Now())
+	fmt.Println((time.Now()).String())
+	str1 := timediff.TimeDiff(time.Now().Add(-10 * time.Second))
+	fmt.Println(str1) // a few seconds ago
+
+	str2 := timediff.TimeDiff(time.Now().Add(-3 * time.Minute))
+	fmt.Println(str2) // 3 minutes ago
+
+	str3 := timediff.TimeDiff(time.Now().Add(-23 * time.Hour))
+	fmt.Println(str3) // a day ago
+
+	str4 := timediff.TimeDiff(time.Now().Add(23 * time.Hour))
+	fmt.Println(str4) // in a day
+
+	str5 := timediff.TimeDiff(time.Now().Add(10 * time.Hour))
+	fmt.Println(str5) // in 10 hours
 
 }

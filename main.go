@@ -8,6 +8,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"text/tabwriter"
 	"time"
 
 	"github.com/mergestat/timediff"
@@ -32,6 +33,8 @@ func parseCSV(data []byte) (*csv.Reader, error) {
 }
 
 func processCSV(reader *csv.Reader) {
+	w := tabwriter.NewWriter(os.Stdout, 0, 0, 1, ' ', 0)
+	fmt.Fprintln(w, "ID\tTask\tCreated\tDone")
 	for {
 		record, err := reader.Read()
 		if err == io.EOF {
@@ -40,13 +43,14 @@ func processCSV(reader *csv.Reader) {
 			fmt.Println("Error reading CSV data: ", err)
 			break
 		}
-		str1 := record[len(record)-2]
-		fmt.Println("VERIFY: ", str1)
 		t, err := time.Parse(time.RFC3339, record[len(record)-2])
-		fmt.Println("PAY ATTENTION: ", t)
+		if err != nil {
+			fmt.Println("Error parsing time from CSV: ", err)
+		}
 		timeDiff := timediff.TimeDiff(t)
-		fmt.Println(record[:len(record)-2], timeDiff, record[len(record)-1])
+		fmt.Fprintf(w, "%s\t%s\t%s\t%s\n", record[0], record[1], timeDiff, record[3])
 	}
+	w.Flush()
 }
 
 func createCSVWriter(filename string) (*csv.Writer, *os.File, error) {
